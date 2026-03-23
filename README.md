@@ -1,4 +1,4 @@
-# Coffe Web Board: Canvas Drawing App
+# Coffee Web Board: Canvas Drawing App
 
 
 ## Features
