@@ -1,7 +1,7 @@
 import React, { useReducer, useEffect, useRef } from 'react';
 import { drawingReducer } from './drawingReducer';
-import { DRAWING_CONFIG, getRandomColor, generateId } from './constants'
-import { State, Action, initialState, Stroke, Point } from './types';
+import { DRAWING_CONFIG, getRandomColor } from './constants'
+import { State, initialState, Stroke, Point } from './types';
 import './App.css';
 
 const loadInitialState = (): State => {
