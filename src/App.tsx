@@ -1,4 +1,4 @@
-import React, { useReducer, useEffect, useRef, useCallback } from 'react';
+import React, { useReducer, useEffect, useRef } from 'react';
 import { drawingReducer } from './drawingReducer';
 import { useWindowResize } from './Resize';
 import { DRAWING_CONFIG, getRandomColor } from './constants'
