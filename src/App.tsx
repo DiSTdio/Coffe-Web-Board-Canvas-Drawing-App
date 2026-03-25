@@ -1,5 +1,6 @@
-import React, { useReducer, useEffect, useRef } from 'react';
+import React, { useReducer, useEffect, useRef, useCallback } from 'react';
 import { drawingReducer } from './drawingReducer';
+import { useWindowResize } from './Resize';
 import { DRAWING_CONFIG, getRandomColor } from './constants'
 import { State, initialState, Stroke, Point } from './types';
 import './App.css';
@@ -20,16 +21,15 @@ const loadInitialState = (): State => {
   return initialState;
 };
 
-// Компонент App
 function App() {
   const [state, dispatch] = useReducer(drawingReducer, loadInitialState());
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const activePointerId = useRef<number | null>(null);
 
-  // Функция рисования одного штриха
+  // 最初の点が丸い点として描画されるように、drawStroke関数を修正
   const drawStroke = (ctx: CanvasRenderingContext2D, stroke: Stroke) => {
     if (stroke.points.length === 1) {
-      // Рисуем точку как закрашенный круг
+      // 丸い点を描画
       ctx.beginPath();
       ctx.fillStyle = stroke.color;
       const radius = DRAWING_CONFIG.strokeWidth * 1.1;
@@ -52,7 +52,10 @@ function App() {
     ctx.stroke();
   };
 
-  // Перерисовка canvas при изменении strokes или currentStroke
+  // sizeについて
+  const { width, height } = useWindowResize();
+
+  // strokesまたはcurrentStrokeが変更されたときにcanvasを再描画します
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -60,18 +63,18 @@ function App() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // очистка
+    // 画布をクリア
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // завершённые штрихи
-    // DEEP SEEK: CHECK pleaase, if *stroke: Stroke* is right here, specifically !?
+    // すべてのstrokesを描画
+
     state.strokes.forEach((stroke: Stroke) => drawStroke(ctx, stroke));
 
-    // текущий штрих
+    // 現在のstroke
     if (state.currentStroke) {
       drawStroke(ctx, state.currentStroke);
     }
-  }, [state.strokes, state.currentStroke]);
+  }, [state.strokes, state.currentStroke, width, height]);
 
   useEffect(() => {
     try {
@@ -89,7 +92,7 @@ function App() {
   }, [state.strokes]);
 
 
-  // Обработчики событий с корректировкой координат
+  // 座標調整を伴うイベントハンドラ
   const getCanvasPoint = (
     e: React.PointerEvent<HTMLCanvasElement>
   ): Point => {
@@ -105,7 +108,7 @@ function App() {
     activePointerId.current = e.pointerId;
 
     const point = getCanvasPoint(e);
-    console.log('POINTER_DOWN', { x: point.x, y: point.y });
+    console.log('[POINTER_DOWN]', point);
 
     dispatch({
       type: 'START_STROKE',
@@ -119,7 +122,7 @@ function App() {
   };
 
 
-  let lastTimeRef = useRef(0);
+  const lastTimeRef = useRef(0);
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const now = Date.now();
     if (now - lastTimeRef.current < 17) return; // ~~~~60fps
@@ -136,19 +139,13 @@ function App() {
     dispatch({ type: 'ADD_POINT', payload: point });
   };
 
-  // const handlePointerUp = (
-  //   e: React.PointerEvent<HTMLCanvasElement>
-  // ) => {
-  //   e.currentTarget.releasePointerCapture(e.pointerId);
-  //   dispatch({ type: 'END_STROKE' });
-  // };
   const endPointerStroke = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (activePointerId.current !== e.pointerId) return;
 
     try {
       e.currentTarget.releasePointerCapture(e.pointerId);
     } catch {
-      // безопасно игнорируем — capture уже снят
+      // Ignore errors if pointer capture was already released
     }
 
     activePointerId.current = null;
@@ -164,6 +161,9 @@ function App() {
     link.href = dataURL;
     link.click();
   };
+
+
+
   return (
     <>
       <div className="button-bar">
@@ -175,8 +175,8 @@ function App() {
 
       <canvas
         ref={canvasRef}
-        width={window.innerWidth}
-        height={window.innerHeight}
+        width={width}
+        height={height}
         style={{
           touchAction: 'none',
           border: '1px solid #ccc',

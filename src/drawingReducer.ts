@@ -1,10 +1,14 @@
 import { DRAWING_CONFIG, generateId } from './constants'
 import { State, Action, } from './types';
 
+// 。。後は、英語ですみません。Reducer for managing drawing state (strokes, undo/redo, current stroke)
 export function drawingReducer(state: State, action: Action): State {
+
+    console.log('[REDUCER]', action.type, action);
+
     switch (action.type) {
         case 'START_STROKE':
-            console.log('START_STROKE', action.payload);
+
             return {
                 ...state,
                 currentStroke: {
@@ -15,29 +19,33 @@ export function drawingReducer(state: State, action: Action): State {
             };
 
         case 'ADD_POINT':
-            console.log('ADD_POINT', action.payload); {
-                if (!state.currentStroke) return state;
-                const points = state.currentStroke.points;
-                const last = points[points.length - 1];
 
-                if (
-                    Math.abs(action.payload.x - last.x) < DRAWING_CONFIG.minPointDistance &&
-                    Math.abs(action.payload.y - last.y) < DRAWING_CONFIG.minPointDistance
-                ) {
-                    return state;
-                }
+            if (!state.currentStroke) {
+                console.warn('[ADD_POINT] ignored: no currentStroke');
+                return state;
+            }
+            const points = state.currentStroke.points;
+            const last = points[points.length - 1];
 
-                return {
-                    ...state,
-                    currentStroke: {
-                        ...state.currentStroke,
-                        points: [...points, action.payload],
-                    },
-                };
+            if (
+                // Skip points that are too close to reduce noise
+                Math.abs(action.payload.x - last.x) < DRAWING_CONFIG.minPointDistance &&
+                Math.abs(action.payload.y - last.y) < DRAWING_CONFIG.minPointDistance
+            ) {
+                return state;
             }
 
+            return {
+                ...state,
+                currentStroke: {
+                    ...state.currentStroke,
+                    points: [...points, action.payload],
+                },
+            };
+
+
         case 'END_STROKE':
-            console.log('END_STROKE');
+
             if (!state.currentStroke) return state;
             return {
                 ...state,
@@ -47,23 +55,29 @@ export function drawingReducer(state: State, action: Action): State {
                 currentStroke: null,
             };
 
-        case 'UNDO':
-            console.log('UNDO');
-            {
-                if (state.undoStack.length === 0) return state;
+        case 'UNDO': {
 
-                const previous = state.undoStack[state.undoStack.length - 1];
-
-                return {
-                    strokes: previous,
-                    undoStack: state.undoStack.slice(0, -1),
-                    redoStack: [...state.redoStack, state.strokes],
-                    currentStroke: null,
-                };
+            if (state.undoStack.length === 0) {
+                console.warn('[UNDO] ignored: undoStack is empty');
+                return state;
             }
 
+            const previous = state.undoStack[state.undoStack.length - 1];
+
+            return {
+                strokes: previous,
+                undoStack: state.undoStack.slice(0, -1),
+                redoStack: [...state.redoStack, state.strokes],
+                currentStroke: null,
+            };
+        }
+
         case 'REDO': {
-            if (state.redoStack.length === 0) return state;
+
+            if (state.redoStack.length === 0) {
+                console.warn('[REDO] ignored: redoStack is empty');
+                return state;
+            }
             const next = state.redoStack[state.redoStack.length - 1];
             return {
                 strokes: next,
@@ -74,7 +88,11 @@ export function drawingReducer(state: State, action: Action): State {
         }
 
         case 'CLEAR': {
-            if (state.strokes.length === 0) return state;
+
+            if (state.strokes.length === 0) {
+                console.warn('[CLEAR] ignored: nothing to clear');
+                return state;
+            }
             return {
                 strokes: [],
                 undoStack: [...state.undoStack, state.strokes],
@@ -84,7 +102,13 @@ export function drawingReducer(state: State, action: Action): State {
         }
 
         default:
-            const _exhaustive: never = action;
-            return state;
+            // // Ensure all action types are handled (exhaustive check)
+            // const _exhaustive: never = action;
+            // return state;
+            return assertNever(action);
     }
+}
+
+function assertNever(x: never): never {
+    throw new Error("Unexpected action: " + JSON.stringify(x));
 }

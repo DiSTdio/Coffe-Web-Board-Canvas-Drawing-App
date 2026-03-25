@@ -1,4 +1,3 @@
-// Типы и конфигурация
 export type Point = {
     x: number;
     y: number;
@@ -7,7 +6,7 @@ export type Point = {
 export type Stroke = {
     id: string;
     color: string;
-    points: Point[];          // переименовано для краткости
+    points: Point[];
 };
 
 export type State = {

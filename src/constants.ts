@@ -3,8 +3,6 @@ export const DRAWING_CONFIG = {
     strokeWidth: 4,
 } as const;
 
-// Вспомогательные функции
-
 export const getRandomColor = (): string => {
     const h = Math.floor(Math.random() * 360);
     const s = 70 + Math.random() * 30;
@@ -14,4 +12,4 @@ export const getRandomColor = (): string => {
 
 export const generateId = (): string => Math.random().toString(36).substring(2, 9);
 
-// Начальное состояние
+
